@@ -16,5 +16,5 @@ module.exports = {
         '@typescript-eslint/semi': ['error'],
         '@typescript-eslint/no-extra-semi': ['error'],
     },
-    ignorePatterns: ['.eslintrc.cjs', 'jest.config.js'],
+    ignorePatterns: ['.eslintrc.cjs', 'jest.config.js', 'index.ts'],
 };

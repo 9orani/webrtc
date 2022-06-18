@@ -62,3 +62,5 @@ const onDisconnect = (ws: WebSocket, connectionId: string): void => {
 
     ws.send(JSON.stringify({ type: 'disconnect', connectionId: connectionId }));
 };
+
+export { add, remove, onConnect, onDisconnect };

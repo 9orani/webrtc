@@ -1,10 +1,12 @@
 {
-    "include": ["src/**/*", "../test/**/*.ts"],
+    "include": ["src/**/*", "../test/**/*.ts", "../index.ts"],
     "exclude": ["node_modules", "**/*.spec.ts"],
     "compilerOptions": {
         "baseUrl": "./",
         "paths": {
-            "controllers/*": ["src/controllers/*"]
+            "controllers/*": ["src/controllers/*"],
+            "router/*": ["src/router/*"],
+            "models/*": ["src/models/*"]
         },
         "module": "commonjs",
         "target": "es5",
