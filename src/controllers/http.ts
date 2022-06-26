@@ -1,5 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-// import { v4 as uuid } from 'uuid';
+import { v4 as uuid } from 'uuid';
+import Offer from 'models/offer';
+import Answer from 'models/answer';
+import Candidate from 'models/candidate';
 
 class Disconnection {
     id: string;
@@ -16,6 +19,9 @@ class Disconnection {
 const clients: Map<string, Set<string>> = new Map<string, Set<string>>();
 const lastRequestedTime: Map<string, number> = new Map<string, number>();
 const connectionPair: Map<string, [string, string]> = new Map<string, [string, string]>();
+const offers: Map<string, Map<string, Offer>> = new Map<string, Map<string, Offer>>();
+const answers: Map<string, Map<string, Answer>> = new Map<string, Map<string, Answer>>();
+const candidates: Map<string, Map<string, Candidate[]>> = new Map<string, Map<string, Candidate[]>>();
 
 const disconnections: Map<string, Disconnection[]> = new Map<string, Disconnection[]>();
 
@@ -23,18 +29,6 @@ const reset = (): void => {
     clients.clear();
     connectionPair.clear();
     disconnections.clear();
-};
-
-const getOrCreateConnectionIds = (sessionId: string): Set<string> => {
-    let connectionIds = null;
-
-    if (!clients.has(sessionId)) {
-        connectionIds = new Set<string>();
-        clients.set(sessionId, connectionIds);
-    }
-    connectionIds = clients.get(sessionId);
-
-    return connectionIds;
 };
 
 const checkSessionId = (req: Request, res: Response, next: NextFunction): void => {
@@ -55,4 +49,16 @@ const checkSessionId = (req: Request, res: Response, next: NextFunction): void =
     next();
 };
 
-export { reset, checkSessionId };
+const createSession = (req: string | Request, res: Response): void => {
+    const sessionId: string = typeof req === 'string' ? req : uuid();
+
+    clients.set(sessionId, new Set<string>());
+    offers.set(sessionId, new Map<string, Offer>());
+    answers.set(sessionId, new Map<string, Answer>());
+    candidates.set(sessionId, new Map<string, Candidate[]>());
+    disconnections.set(sessionId, []);
+
+    res.json({ sessionId: sessionId });
+};
+
+export { reset, checkSessionId, createSession };
