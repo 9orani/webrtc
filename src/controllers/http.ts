@@ -61,4 +61,31 @@ const createSession = (req: string | Request, res: Response): void => {
     res.json({ sessionId: sessionId });
 };
 
-export { reset, checkSessionId, createSession };
+const createConnection = (req: Request, res: Response): void => {
+    const sessionId = req.header('session-id');
+    const { connectionId } = req.body;
+
+    if (connectionId === null) {
+        res.status(400).send({ error: new Error('connectionId is required') });
+        return;
+    }
+
+    const connectionIds = getOrCreateConnectionIds(sessionId);
+    connectionIds.add(connectionId);
+
+    res.json({ connectionId: connectionId, type: 'connect', dateTime: Date.now() });
+};
+
+const getOrCreateConnectionIds = (sessionId: string): Set<string> => {
+    let connectionIds = null;
+
+    if (!clients.has(sessionId)) {
+        connectionIds = new Set<string>();
+        clients.set(sessionId, connectionIds);
+    }
+    connectionIds = clients.get(sessionId);
+
+    return connectionIds;
+};
+
+export { reset, checkSessionId, createSession, createConnection };
