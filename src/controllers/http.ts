@@ -14,7 +14,7 @@ class Disconnection {
     }
 }
 
-// const TimeoutRequestedTime = 10000;
+const TimeoutRequestedTime = 10000;
 
 const clients: Map<string, Set<string>> = new Map<string, Set<string>>();
 const lastRequestedTime: Map<string, number> = new Map<string, number>();
@@ -88,4 +88,69 @@ const getOrCreateConnectionIds = (sessionId: string): Set<string> => {
     return connectionIds;
 };
 
-export { reset, checkSessionId, createSession, createConnection };
+const getConnection = (req: Request, res: Response): void => {
+    const sessionId: string = req.header('session-id');
+    const connections: string[] = _getConnection(sessionId);
+
+    res.json({ connections: connections.map((v) => ({ connectionId: v, type: 'connect', dateTime: Date.now() })) });
+};
+
+const _getConnection = (sessionId: string): string[] => {
+    _checkDeletedSession(sessionId);
+    return Array.from(clients.get(sessionId));
+};
+
+const _checkDeletedSession = (sessionId: string): void => {
+    const connectionIds = Array.from(clients.get(sessionId));
+    for (const connectionId of connectionIds) {
+        const pair = connectionPair.get(connectionId);
+        if (pair == null) {
+            continue;
+        }
+
+        const otherSessionId = sessionId === pair[0] ? pair[1] : pair[0];
+
+        if (!lastRequestedTime.has(otherSessionId)) {
+            continue;
+        }
+
+        if (lastRequestedTime.get(otherSessionId) > Date.now() - TimeoutRequestedTime) {
+            continue;
+        }
+
+        _deleteSession(otherSessionId);
+    }
+};
+
+const _deleteSession = (sessionId: string): void => {
+    for (const connectionId of Array.from(clients.get(sessionId))) {
+        _deleteConnection(sessionId, connectionId);
+    }
+
+    offers.delete(sessionId);
+    answers.delete(sessionId);
+    clients.delete(sessionId);
+    disconnections.delete(sessionId);
+};
+
+const _deleteConnection = (sessionId: string, connectionId: string): void => {
+    clients.get(sessionId).delete(sessionId);
+
+    if (connectionPair.has(connectionId)) {
+        const pair = connectionPair.get(connectionId);
+        const otherSessionId = pair[0] === sessionId ? pair[1] : pair[0];
+
+        if (otherSessionId) {
+            if (clients.has(otherSessionId)) {
+                clients.get(otherSessionId).delete(connectionId);
+            }
+        }
+    }
+
+    connectionPair.delete(connectionId);
+    offers.get(sessionId).delete(connectionId);
+    answers.get(sessionId).delete(connectionId);
+    candidates.get(sessionId).delete(connectionId);
+};
+
+export { reset, checkSessionId, createSession, createConnection, getConnection };
