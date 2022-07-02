@@ -54,4 +54,9 @@ describe('http signaling test in public mode', () => {
         http.createConnection(req2, res);
         expect(res.json).toBeCalledWith({ connectionId: connectionId2, dateTime: expect.anything(), type: 'connect' });
     });
+
+    test('get connection from session', () => {
+        http.getConnection(req, res);
+        expect(res.json).toBeCalledWith({ connections: [{ connectionId: connectionId, dateTime: expect.anything(), type: 'connect' }] });
+    });
 });
