@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { v4 as uuid } from 'uuid';
-import Offer from 'models/offer';
-import Answer from 'models/answer';
-import Candidate from 'models/candidate';
+import Offer from '../models/offer';
+import Answer from '../models/answer';
+import Candidate from '../models/candidate';
 
 class Disconnection {
     id: string;
@@ -153,4 +153,41 @@ const _deleteConnection = (sessionId: string, connectionId: string): void => {
     candidates.get(sessionId).delete(connectionId);
 };
 
-export { reset, checkSessionId, createSession, createConnection, getConnection };
+// offer 생성
+const postOffer = (req: Request, res: Response): void => {
+    const sessionId: string = req.header('session-id');
+    const { connectionId } = req.body;
+
+    connectionPair.set(connectionId, [sessionId, null]);
+
+    const map = offers.get(sessionId);
+    map.set(connectionId, new Offer(req.body.sdp, Date.now(), false));
+
+    res.sendStatus(200);
+};
+
+// offer 조회
+const getOffer = (req: Request, res: Response): void => {
+    const fromTime: number = req.query.fromTime ? Number(req.query.fromTime) : 0;
+    const sessionId: string = req.header('session-id');
+    const offers: [string, Offer][] = _getOffer(sessionId, fromTime);
+
+    res.json({ offers: offers.map((v) => ({ connectionId: v[0], sdp: v[1].sdp, polite: v[1].polite, type: 'offer', dateTime: v[1].dateTime })) });
+};
+
+const _getOffer = (sessionId: string, fromTime: number): [string, Offer][] => {
+    let arrayOffers: [string, Offer][] = [];
+
+    if (offers.size !== 0) {
+        const otherSessionMap = Array.from(offers).filter((x) => x[0] != sessionId);
+        arrayOffers = [].concat(...Array.from(otherSessionMap, (x) => Array.from(x[1], (y) => [y[0], y[1]])));
+    }
+
+    if (fromTime > 0) {
+        arrayOffers = arrayOffers.filter((v) => v[1].dateTime > fromTime);
+    }
+
+    return arrayOffers;
+};
+
+export { reset, checkSessionId, createSession, createConnection, getConnection, postOffer, getOffer };
