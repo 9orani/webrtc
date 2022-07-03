@@ -153,4 +153,144 @@ const _deleteConnection = (sessionId: string, connectionId: string): void => {
     candidates.get(sessionId).delete(connectionId);
 };
 
-export { reset, checkSessionId, createSession, createConnection, getConnection };
+const getAllConnections = (req: Request, res: Response): void => {
+    const fromTime: number = req.query.fromTime ? Number(req.query.fromTime) : 0;
+    const sessionId: string = req.header('session-id');
+
+    const connections: string[] = _getConnection(sessionId);
+    const offers: [string, Offer][] = _getOffer(sessionId, fromTime);
+    const answers: [string, Answer][] = _getAnswer(sessionId, fromTime);
+    const candidates: [string, Candidate][] = _getCandidate(sessionId, fromTime);
+    const disconnections: Disconnection[] = _getDisconnection(sessionId, fromTime);
+
+    let array: any[] = [];
+
+    array = array.concat(
+        connections.map((v) => ({
+            connectionId: v,
+            type: 'connect',
+            dateTime: Date.now(),
+        }))
+    );
+
+    array = array.concat(
+        offers.map((v) => ({
+            connectionId: v[0],
+            sdp: v[1].sdp,
+            polite: v[1].polite,
+            type: 'offer',
+            dateTime: v[1].dateTime,
+        }))
+    );
+
+    array = array.concat(
+        answers.map((v) => ({
+            connectionId: v[0],
+            sdp: v[1].sdp,
+            type: 'answer',
+            dateTime: v[1].dateTime,
+        }))
+    );
+
+    array = array.concat(
+        candidates.map((v) => ({
+            connectionId: v[0],
+            candidate: v[1].candidate,
+            sdpMLineIndex: v[1].sdpMLineIndex,
+            sdpMid: v[1].sdpMid,
+            type: 'candidate',
+            dateTime: v[1].dateTime,
+        }))
+    );
+
+    array = array.concat(
+        disconnections.map((v) => ({
+            connectionId: v.id,
+            type: 'disconnect',
+            dateTime: v.dateTime,
+        }))
+    );
+
+    array.sort((a, b) => a.dateTime - b.dateTime);
+
+    console.log(array);
+
+    res.json({ messages: array });
+};
+
+const _getOffer = (sessoinId: string, fromTime: number): [string, Offer][] => {
+    let arrayOffers: [string, Offer][] = [];
+
+    if (offers.size !== 0) {
+        const otherSessionMap = Array.from(offers).filter((x) => x[0] !== sessoinId);
+        arrayOffers = [].concat(...Array.from(otherSessionMap, (x) => Array.from(x[1], (y) => [y[0], y[1]])));
+    }
+
+    if (fromTime > 0) {
+        arrayOffers = arrayOffers.filter((v) => v[1].dateTime > fromTime);
+    }
+
+    return arrayOffers;
+};
+
+const _getAnswer = (sessionId: string, fromTime: number): [string, Answer][] => {
+    let arrayAnswers: [string, Answer][] = [];
+
+    if (answers.size !== 0 && answers.has(sessionId)) {
+        arrayAnswers = Array.from(answers.get(sessionId));
+    }
+
+    if (fromTime > 0) {
+        arrayAnswers = arrayAnswers.filter((v) => v[1].dateTime > fromTime);
+    }
+
+    return arrayAnswers;
+};
+
+const _getCandidate = (sessionId: string, fromTime: number): [string, Candidate][] => {
+    const connectionIds: string[] = Array.from(clients.get(sessionId));
+    const arrayCandidates: [string, Candidate][] = [];
+
+    for (const connectionId of connectionIds) {
+        const pair = connectionPair.get(connectionId);
+        if (pair == null) {
+            continue;
+        }
+
+        const otherSessionId: string = sessionId === pair[0] ? pair[1] : pair[0];
+        if (!candidates.get(otherSessionId) || !candidates.get(otherSessionId).get(connectionId)) {
+            continue;
+        }
+
+        const tmpArrayCandidates = candidates
+            .get(otherSessionId)
+            .get(connectionId)
+            .filter((v) => v.dateTime > fromTime);
+        if (tmpArrayCandidates.length === 0) {
+            continue;
+        }
+
+        for (const candidate of tmpArrayCandidates) {
+            arrayCandidates.push([connectionId, candidate]);
+        }
+    }
+
+    return arrayCandidates;
+};
+
+const _getDisconnection = (sessionId: string, fromTime: number): Disconnection[] => {
+    _checkDeletedSession(sessionId);
+
+    let arrayDisconnections: Disconnection[] = [];
+    if (disconnections.size !== 0 && disconnections.has(sessionId)) {
+        arrayDisconnections = disconnections.get(sessionId);
+    }
+
+    if (fromTime > 0) {
+        arrayDisconnections = arrayDisconnections.filter((v) => v.dateTime > fromTime);
+    }
+
+    return arrayDisconnections;
+};
+
+export { reset, checkSessionId, createSession, createConnection, getConnection, getAllConnections };
