@@ -394,6 +394,15 @@ const _getCandidate = (sessionId: string, fromTime: number): [string, Candidate]
     return arrayCandidates;
 };
 
+const deleteConnection = (req: Request, res: Response): void => {
+    const sessionId: string = req.header('session-id');
+    const { connectionId } = req.body;
+
+    _deleteConnection(sessionId, connectionId);
+
+    res.json({ connectionId: connectionId });
+};
+
 export {
     reset,
     checkSessionId,
@@ -407,4 +416,5 @@ export {
     getAnswer,
     postCandidate,
     getCandidate,
+    deleteConnection,
 };

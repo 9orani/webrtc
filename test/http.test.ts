@@ -124,4 +124,25 @@ describe('http signaling test in public mode', () => {
             candidates: [{ connectionId: connectionId, candidate: testCandidate, sdpMLineIndex: 0, sdpMid: 0, type: 'candidate', dateTime: expect.anything() }],
         });
     });
+
+    test('delete connection from session 2', () => {
+        const body = { connectionId: connectionId };
+        req2.body = body;
+
+        http.deleteConnection(req2, res);
+        expect(res.json).toBeCalledWith({ connectionId: connectionId });
+    });
+
+    test('no connection get from session 1', () => {
+        http.getConnection(req, res);
+        expect(res.json).toBeCalledWith({ connections: [] });
+    });
+
+    test('delete conncetion from session 1', () => {
+        const body = { connectionId: connectionId };
+        req.body = body;
+
+        http.deleteConnection(req, res);
+        expect(res.json).toBeCalledWith({ connectionId: connectionId });
+    });
 });
