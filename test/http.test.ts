@@ -84,4 +84,22 @@ describe('http signaling test in public mode', () => {
         http.getOffer(req2, res);
         expect(res.json).toBeCalledWith({ offers: [{ connectionId: connectionId, sdp: testSDP, polite: false, dateTime: expect.anything(), type: 'offer' }] });
     });
+
+    test('post answer from session 2', () => {
+        const body = { connectionId: connectionId, sdp: testSDP };
+        req2.body = body;
+
+        http.postAnswer(req2, res);
+        expect(res.sendStatus).toBeCalledWith(200);
+    });
+
+    test('get answer from session 1', () => {
+        http.getAnswer(req, res);
+        expect(res.json).toBeCalledWith({ answers: [{ connectionId: connectionId, sdp: testSDP, dateTime: expect.anything(), type: 'answer' }] });
+    });
+
+    test('get answer from session 2', () => {
+        http.getAnswer(req2, res);
+        expect(res.json).toBeCalledWith({ answers: [] });
+    });
 });

@@ -213,8 +213,6 @@ const getAllConnections = (req: Request, res: Response): void => {
 
     array.sort((a, b) => a.dateTime - b.dateTime);
 
-    console.log(array);
-
     res.json({ messages: array });
 };
 
@@ -253,20 +251,6 @@ const _getOffer = (sessionId: string, fromTime: number): [string, Offer][] => {
     }
 
     return arrayOffers;
-};
-
-const _getAnswer = (sessionId: string, fromTime: number): [string, Answer][] => {
-    let arrayAnswers: [string, Answer][] = [];
-
-    if (answers.size !== 0 && answers.has(sessionId)) {
-        arrayAnswers = Array.from(answers.get(sessionId));
-    }
-
-    if (fromTime > 0) {
-        arrayAnswers = arrayAnswers.filter((v) => v[1].dateTime > fromTime);
-    }
-
-    return arrayAnswers;
 };
 
 const _getCandidate = (sessionId: string, fromTime: number): [string, Candidate][] => {
@@ -315,4 +299,67 @@ const _getDisconnection = (sessionId: string, fromTime: number): Disconnection[]
     return arrayDisconnections;
 };
 
-export { reset, checkSessionId, createSession, createConnection, getConnection, getAllConnections, postOffer, getOffer };
+const getAnswer = (req: Request, res: Response): void => {
+    const fromTime: number = req.query.fromTime ? Number(req.query.fromTime) : 0;
+    const sessionId: string = req.header('session-id');
+    const answers: [string, Answer][] = _getAnswer(sessionId, fromTime);
+
+    console.log(answers);
+
+    res.json({ answers: answers.map((v) => ({ connectionId: v[0], sdp: v[1].sdp, type: 'answer', dateTime: v[1].dateTime })) });
+};
+
+const _getAnswer = (sessionId: string, fromTime: number): [string, Answer][] => {
+    let arrayAnswers: [string, Answer][] = [];
+
+    console.log(answers);
+    console.log(fromTime);
+
+    if (answers.size != 0 && answers.has(sessionId)) {
+        arrayAnswers = Array.from(answers.get(sessionId));
+    }
+
+    if (fromTime > 0) {
+        arrayAnswers = arrayAnswers.filter((v) => v[1].dateTime > fromTime);
+    }
+
+    return arrayAnswers;
+};
+
+const postAnswer = (req: Request, res: Response): void => {
+    const sessionId: string = req.header('session-id');
+    const { connectionId } = req.body;
+    const connectionIds: Set<string> = getOrCreateConnectionIds(sessionId);
+
+    connectionIds.add(connectionId);
+
+    if (!connectionPair.has(connectionId)) {
+        res.sendStatus(200);
+        return;
+    }
+
+    const pair: [string, string] = connectionPair.get(connectionId);
+    const otherSessionIds: string = pair[0] == sessionId ? pair[1] : pair[0];
+
+    if (!clients.has(otherSessionIds)) {
+        res.sendStatus(200);
+        return;
+    }
+
+    const map: Map<string, Answer> = answers.get(otherSessionIds);
+    map.set(connectionId, new Answer(req.body.sdp, Date.now()));
+
+    const mapCandidates: Map<string, Candidate[]> = candidates.get(otherSessionIds);
+    if (mapCandidates) {
+        const arrayCandidates = mapCandidates.get(connectionId);
+        if (arrayCandidates) {
+            for (const candidate of arrayCandidates) {
+                candidate.dateTime = Date.now();
+            }
+        }
+    }
+
+    res.sendStatus(200);
+};
+
+export { reset, checkSessionId, createSession, createConnection, getConnection, getAllConnections, postOffer, getOffer, postAnswer, getAnswer };
