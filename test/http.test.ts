@@ -145,4 +145,18 @@ describe('http signaling test in public mode', () => {
         http.deleteConnection(req, res);
         expect(res.json).toBeCalledWith({ connectionId: connectionId });
     });
+
+    test('delete session 1', () => {
+        const req = getMockReq({ header: (): string => sessionId });
+        http.deleteSession(req, res);
+
+        expect(res.sendStatus).toBeCalledWith(200);
+    });
+
+    test('delete session 2', () => {
+        const req2 = getMockReq({ header: (): string => sessionId2 });
+        http.deleteSession(req2, res);
+
+        expect(res.sendStatus).toBeCalledWith(200);
+    });
 });

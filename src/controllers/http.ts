@@ -403,6 +403,13 @@ const deleteConnection = (req: Request, res: Response): void => {
     res.json({ connectionId: connectionId });
 };
 
+const deleteSession = (req: Request, res: Response): void => {
+    const id: string = req.header('session-id');
+    _deleteSession(id);
+
+    res.sendStatus(200);
+};
+
 export {
     reset,
     checkSessionId,
@@ -417,4 +424,5 @@ export {
     postCandidate,
     getCandidate,
     deleteConnection,
+    deleteSession,
 };
