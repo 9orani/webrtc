@@ -11,6 +11,8 @@ describe('http signaling test in public mode', () => {
 
     const testSDP = 'hello sdp';
 
+    const testCandidate = 'hello candidate';
+
     const { res, next, mockClear } = getMockRes();
 
     const req = getMockReq({ header: (): string => sessionId });
@@ -101,5 +103,25 @@ describe('http signaling test in public mode', () => {
     test('get answer from session 2', () => {
         http.getAnswer(req2, res);
         expect(res.json).toBeCalledWith({ answers: [] });
+    });
+
+    test('post candidate from session 1', () => {
+        const body = { connectionId: connectionId, candidate: testCandidate, sdpMLineIndex: 0, sdpMid: 0 };
+        req.body = body;
+
+        http.postCandidate(req, res);
+        expect(res.sendStatus).toBeCalledWith(200);
+    });
+
+    test('get candidate from session 1', () => {
+        http.getCandidate(req, res);
+        expect(res.json).toBeCalledWith({ candidates: [] });
+    });
+
+    test('get candidate from session 2', () => {
+        http.getCandidate(req2, res);
+        expect(res.json).toBeCalledWith({
+            candidates: [{ connectionId: connectionId, candidate: testCandidate, sdpMLineIndex: 0, sdpMid: 0, type: 'candidate', dateTime: expect.anything() }],
+        });
     });
 });

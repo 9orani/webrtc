@@ -253,37 +253,6 @@ const _getOffer = (sessionId: string, fromTime: number): [string, Offer][] => {
     return arrayOffers;
 };
 
-const _getCandidate = (sessionId: string, fromTime: number): [string, Candidate][] => {
-    const connectionIds: string[] = Array.from(clients.get(sessionId));
-    const arrayCandidates: [string, Candidate][] = [];
-
-    for (const connectionId of connectionIds) {
-        const pair = connectionPair.get(connectionId);
-        if (pair == null) {
-            continue;
-        }
-
-        const otherSessionId: string = sessionId === pair[0] ? pair[1] : pair[0];
-        if (!candidates.get(otherSessionId) || !candidates.get(otherSessionId).get(connectionId)) {
-            continue;
-        }
-
-        const tmpArrayCandidates = candidates
-            .get(otherSessionId)
-            .get(connectionId)
-            .filter((v) => v.dateTime > fromTime);
-        if (tmpArrayCandidates.length === 0) {
-            continue;
-        }
-
-        for (const candidate of tmpArrayCandidates) {
-            arrayCandidates.push([connectionId, candidate]);
-        }
-    }
-
-    return arrayCandidates;
-};
-
 const _getDisconnection = (sessionId: string, fromTime: number): Disconnection[] => {
     _checkDeletedSession(sessionId);
 
@@ -299,33 +268,7 @@ const _getDisconnection = (sessionId: string, fromTime: number): Disconnection[]
     return arrayDisconnections;
 };
 
-const getAnswer = (req: Request, res: Response): void => {
-    const fromTime: number = req.query.fromTime ? Number(req.query.fromTime) : 0;
-    const sessionId: string = req.header('session-id');
-    const answers: [string, Answer][] = _getAnswer(sessionId, fromTime);
-
-    console.log(answers);
-
-    res.json({ answers: answers.map((v) => ({ connectionId: v[0], sdp: v[1].sdp, type: 'answer', dateTime: v[1].dateTime })) });
-};
-
-const _getAnswer = (sessionId: string, fromTime: number): [string, Answer][] => {
-    let arrayAnswers: [string, Answer][] = [];
-
-    console.log(answers);
-    console.log(fromTime);
-
-    if (answers.size != 0 && answers.has(sessionId)) {
-        arrayAnswers = Array.from(answers.get(sessionId));
-    }
-
-    if (fromTime > 0) {
-        arrayAnswers = arrayAnswers.filter((v) => v[1].dateTime > fromTime);
-    }
-
-    return arrayAnswers;
-};
-
+// answer 생성
 const postAnswer = (req: Request, res: Response): void => {
     const sessionId: string = req.header('session-id');
     const { connectionId } = req.body;
@@ -362,4 +305,106 @@ const postAnswer = (req: Request, res: Response): void => {
     res.sendStatus(200);
 };
 
-export { reset, checkSessionId, createSession, createConnection, getConnection, getAllConnections, postOffer, getOffer, postAnswer, getAnswer };
+// answer 조회
+const getAnswer = (req: Request, res: Response): void => {
+    const fromTime: number = req.query.fromTime ? Number(req.query.fromTime) : 0;
+    const sessionId: string = req.header('session-id');
+    const answers: [string, Answer][] = _getAnswer(sessionId, fromTime);
+
+    res.json({ answers: answers.map((v) => ({ connectionId: v[0], sdp: v[1].sdp, type: 'answer', dateTime: v[1].dateTime })) });
+};
+
+const _getAnswer = (sessionId: string, fromTime: number): [string, Answer][] => {
+    let arrayAnswers: [string, Answer][] = [];
+
+    if (answers.size != 0 && answers.has(sessionId)) {
+        arrayAnswers = Array.from(answers.get(sessionId));
+    }
+
+    if (fromTime > 0) {
+        arrayAnswers = arrayAnswers.filter((v) => v[1].dateTime > fromTime);
+    }
+
+    return arrayAnswers;
+};
+
+// candidate 생성
+const postCandidate = (req: Request, res: Response): void => {
+    const sessionId: string = req.header('session-id');
+    const { connectionId } = req.body;
+
+    const map = candidates.get(sessionId);
+    if (!map.has(connectionId)) {
+        map.set(connectionId, []);
+    }
+
+    const arr = map.get(connectionId);
+    const candidate = new Candidate(req.body.candidate, req.body.sdpMLineIndex, req.body.sdpMid, Date.now());
+
+    arr.push(candidate);
+    res.sendStatus(200);
+};
+
+// candidate 조회
+const getCandidate = (req: Request, res: Response): void => {
+    const fromTime: number = req.query.fromTime ? Number(req.query.fromTime) : 0;
+    const sessionId: string = req.header('session-id');
+    const candidates: [string, Candidate][] = _getCandidate(sessionId, fromTime);
+
+    res.json({
+        candidates: candidates.map((v) => ({
+            connectionId: v[0],
+            candidate: v[1].candidate,
+            sdpMLineIndex: v[1].sdpMLineIndex,
+            sdpMid: v[1].sdpMid,
+            type: 'candidate',
+            dateTime: v[1].dateTime,
+        })),
+    });
+};
+
+const _getCandidate = (sessionId: string, fromTime: number): [string, Candidate][] => {
+    const connectionIds: string[] = Array.from(clients.get(sessionId));
+    const arrayCandidates: [string, Candidate][] = [];
+
+    for (const connectionId of connectionIds) {
+        const pair = connectionPair.get(connectionId);
+        if (pair == null) {
+            continue;
+        }
+
+        const otherSessionId: string = sessionId === pair[0] ? pair[1] : pair[0];
+        if (!candidates.get(otherSessionId) || !candidates.get(otherSessionId).get(connectionId)) {
+            continue;
+        }
+
+        const tmpArrayCandidates = candidates
+            .get(otherSessionId)
+            .get(connectionId)
+            .filter((v) => v.dateTime > fromTime);
+        if (tmpArrayCandidates.length === 0) {
+            continue;
+        }
+
+        for (const candidate of tmpArrayCandidates) {
+            arrayCandidates.push([connectionId, candidate]);
+        }
+    }
+
+    return arrayCandidates;
+};
+
+export {
+    reset,
+    checkSessionId,
+    createSession,
+    createConnection,
+    getConnection,
+    getAllConnections,
+    postOffer,
+    getOffer,
+    postAnswer,
+    getAnswer,
+    postCandidate,
+    getCandidate,
+};
