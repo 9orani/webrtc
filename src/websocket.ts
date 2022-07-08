@@ -21,11 +21,18 @@ export default class WSSignaling {
                 // type:            connect, disconnect JSON Schema
                 // connectionId:    connect or disconnect connectionId
 
+                // type: offer, answer, candidate JSON Schema
+                // from: from connection id
+                // to: to connection id
+                // data: any message data structure
+
                 const msg = JSON.parse(event.data);
 
                 if (!msg || !this) {
                     return;
                 }
+
+                console.log(msg);
 
                 const connectionId = msg.connectionId;
 
@@ -38,6 +45,12 @@ export default class WSSignaling {
                         break;
                     case 'offer':
                         wsController.onOffer(ws, msg.data);
+                        break;
+                    case 'answer':
+                        wsController.onAnswer(ws, msg.data);
+                        break;
+                    case 'candidate':
+                        wsController.onCandidate(ws, msg.data);
                         break;
                     default:
                         break;
