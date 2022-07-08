@@ -1,5 +1,9 @@
 import WS from 'jest-websocket-mock';
 
+import Offer from '../src/models/offer';
+// import Answer from '../src/models/answer';
+// import Candidate from '../src/models/candidate';
+
 import * as websocket from '../src/controllers/websocket';
 
 Date.now = jest.fn(() => 1482363367071);
@@ -9,8 +13,10 @@ describe('websocket signaling test in public mode', () => {
     let client: WebSocket;
     let client2: WebSocket;
 
-    const connectionId = 'hellow world';
+    const connectionId = 'hello world';
     const connectionId2 = 'hello world 2';
+
+    const testSDP = 'hello sdp';
 
     const host = 'ws://localhost:8080';
 
@@ -49,5 +55,13 @@ describe('websocket signaling test in public mode', () => {
 
         await expect(server).toReceiveMessage({ type: 'connect', connectionId: connectionId2, polite: true });
         expect(server).toHaveReceivedMessages([{ type: 'connect', connectionId: connectionId2, polite: true }]);
+    });
+
+    test('send offer from session 1', async () => {
+        const receiveOffer = new Offer(testSDP, Date.now(), false);
+        websocket.onOffer(client, { connectionId: connectionId, sdp: testSDP });
+
+        await expect(server).toReceiveMessage({ from: connectionId, to: '', type: 'offer', data: receiveOffer });
+        expect(server).toHaveReceivedMessages([{ from: connectionId, to: '', type: 'offer', data: receiveOffer }]);
     });
 });
