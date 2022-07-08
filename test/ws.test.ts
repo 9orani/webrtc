@@ -83,4 +83,24 @@ describe('websocket signaling test in public mode', () => {
         await expect(server).toReceiveMessage({ from: connectionId, to: '', type: 'candidate', data: receviceCandidate });
         expect(server).toHaveReceivedMessages([{ from: connectionId, to: '', type: 'candidate', data: receviceCandidate }]);
     });
+
+    test('delete connection from session 2', async () => {
+        websocket.onDisconnect(client2, connectionId);
+
+        await expect(server).toReceiveMessage({ type: 'disconnect', connectionId: connectionId });
+        expect(server).toHaveReceivedMessages([
+            { type: 'disconnect', connectionId: connectionId },
+            { type: 'disconnect', connectionId: connectionId },
+        ]);
+    });
+
+    test('delete session 2', () => {
+        expect(client).not.toBeNull();
+        websocket.remove(client2);
+    });
+
+    test('delete session 1', () => {
+        expect(client2).not.toBeNull();
+        websocket.remove(client);
+    });
 });
