@@ -1,6 +1,6 @@
 import Offer from '../models/offer';
 import Answer from '../models/answer';
-// import Candidate from '../models/candidate';
+import Candidate from '../models/candidate';
 
 const clients: Map<WebSocket, Set<string>> = new Map<WebSocket, Set<string>>();
 const connectionPair: Map<string, [WebSocket, WebSocket]> = new Map<string, [WebSocket, WebSocket]>();
@@ -94,4 +94,16 @@ const onAnswer = (ws: WebSocket, message: any): void => {
     otherSessionWs.send(JSON.stringify({ from: connectionId, to: '', type: 'answer', data: newAnswer }));
 };
 
-export { add, remove, onConnect, onDisconnect, onOffer, onAnswer };
+const onCandidate = (ws: WebSocket, message: any): void => {
+    const connectionId = message.connectionId;
+    const candidate: Candidate = new Candidate(message.candidate, message.sdpMLineIndex, message.sdpMid, Date.now());
+
+    clients.forEach((_v, k) => {
+        if (k === ws) {
+            return;
+        }
+        k.send(JSON.stringify({ from: connectionId, to: '', type: 'candidate', data: candidate }));
+    });
+};
+
+export { add, remove, onConnect, onDisconnect, onOffer, onAnswer, onCandidate };

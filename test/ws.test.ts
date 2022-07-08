@@ -2,7 +2,7 @@ import WS from 'jest-websocket-mock';
 
 import Offer from '../src/models/offer';
 import Answer from '../src/models/answer';
-// import Candidate from '../src/models/candidate';
+import Candidate from '../src/models/candidate';
 
 import * as websocket from '../src/controllers/websocket';
 
@@ -72,5 +72,15 @@ describe('websocket signaling test in public mode', () => {
 
         await expect(server).toReceiveMessage({ from: connectionId, to: '', type: 'answer', data: receiveAnswer });
         expect(server).toHaveReceivedMessages([{ from: connectionId, to: '', type: 'answer', data: receiveAnswer }]);
+    });
+
+    test('send candidate from session 1', async () => {
+        const msg = { connectionId: connectionId, candidate: 'hello candidate', sdpMLineIndex: 0, sdpMid: '0' };
+        const receviceCandidate: Candidate = new Candidate('hello candidate', 0, '0', Date.now());
+
+        websocket.onCandidate(client, msg);
+
+        await expect(server).toReceiveMessage({ from: connectionId, to: '', type: 'candidate', data: receviceCandidate });
+        expect(server).toHaveReceivedMessages([{ from: connectionId, to: '', type: 'candidate', data: receviceCandidate }]);
     });
 });
