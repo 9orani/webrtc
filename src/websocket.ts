@@ -36,6 +36,9 @@ export default class WSSignaling {
                     case 'disconnect':
                         wsController.onDisconnect(ws, connectionId);
                         break;
+                    case 'offer':
+                        wsController.onOffer(ws, msg.data);
+                        break;
                     default:
                         break;
                 }
