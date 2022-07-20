@@ -1,0 +1,13 @@
+version: '3.5'
+
+services:
+  gorani:
+    container_name: gorani-webrtc
+    image: gorani-webrtc:prod
+    volumes:
+      - ..:/home/gorani
+    entrypoint: "/entrypoint.sh"
+    environment:
+      - WEBRTC_PORT=${WEBRTC_PORT}
+    ports:
+      - ${WEBRTC_PORT}:${WEBRTC_PORT}

@@ -1,6 +1,6 @@
 import * as express from 'express';
-import router from 'router/index';
-import signaling from 'router/signaling';
+import router from './router/index';
+import signaling from './router/signaling';
 
 export const createServer = (): express.Application => {
     const app: express.Application = express();
