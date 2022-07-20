@@ -1,6 +1,6 @@
 import { Server } from 'http';
 import * as websocket from 'ws';
-import * as wsController from 'controllers/websocket';
+import * as wsController from './controllers/websocket';
 
 export default class WSSignaling {
     server: Server;
