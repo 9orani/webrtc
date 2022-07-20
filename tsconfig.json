@@ -1,19 +1,14 @@
 {
-    "include": ["src/**/*", "../test/**/*.ts", "../index.ts"],
+    "include": ["src/**/*", "test/**/*.ts", "index.ts"],
     "exclude": ["node_modules", "**/*.spec.ts"],
     "compilerOptions": {
         "baseUrl": "./",
-        "paths": {
-            "controllers/*": ["src/controllers/*"],
-            "router/*": ["src/router/*"],
-            "models/*": ["src/models/*"]
-        },
         "module": "commonjs",
         "target": "es5",
         "lib": ["dom", "es5"],
         "sourceMap": true,
         "outDir": "build",
-        "rootDir": "src",
+        "rootDir": ".",
         "noUnusedLocals": true,
         "noUnusedParameters": true,
         "noImplicitAny": true,
