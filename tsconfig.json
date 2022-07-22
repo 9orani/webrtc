@@ -1,6 +1,6 @@
 {
-    "include": ["src/**/*", "test/**/*.ts", "index.ts"],
-    "exclude": ["node_modules", "**/*.spec.ts"],
+    "include": ["index.ts", "src/**/*", "test/**/*.ts"],
+    "exclude": ["node_modules", "**/*.spec.ts", "build"],
     "compilerOptions": {
         "baseUrl": "./",
         "module": "commonjs",
