@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { Server } from 'http';
 import * as websocket from 'ws';
 import * as wsController from './controllers/websocket';
@@ -17,7 +18,7 @@ export default class WSSignaling {
                 wsController.remove(ws);
             };
 
-            ws.onmessage = (event: MessageEvent): void => {
+            ws.onmessage = async (event: MessageEvent) => {
                 // type:            connect, disconnect JSON Schema
                 // connectionId:    connect or disconnect connectionId
 
@@ -39,9 +40,11 @@ export default class WSSignaling {
                 switch (msg.type) {
                     case 'connect':
                         wsController.onConnect(ws, connectionId);
+                        this.entrance();
                         break;
                     case 'disconnect':
                         wsController.onDisconnect(ws, connectionId);
+                        this.leave();
                         break;
                     case 'offer':
                         wsController.onOffer(ws, msg.data);
@@ -57,5 +60,13 @@ export default class WSSignaling {
                 }
             };
         });
+    }
+
+    async entrance() {
+        await axios.post(`${process.env.SPRING_ADDRESS}/v1/rooms/port/${process.env.WEBRTC_PORT}`);
+    }
+
+    async leave() {
+        await axios.delete(`${process.env.SPRING_ADDRESS}/v1/rooms/port/${process.env.WEBRTC_PORT}`);
     }
 }
